@@ -1,0 +1,922 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ROYAL BASRA</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080808;color:#f5e4b0;
+ font-family:Arial,sans-serif;min-height:100vh;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.gold{color:#e9c46a}
+header{
+ text-align:center;padding:18px 8px;
+ background:linear-gradient(180deg,#211908,#090909);
+ border-bottom:1px solid #8e6b28;
+}
+.logo{font-size:29px;font-weight:900;letter-spacing:2px}
+.sub{font-size:11px;color:#a98a4b;margin-top:5px}
+.screen{display:none;padding:18px 13px;max-width:650px;margin:auto}
+.screen.active{display:block}
+.panel{
+ background:linear-gradient(145deg,#17130c,#0d0d0d);
+ border:1px solid #71551f;border-radius:16px;
+ padding:17px;margin:13px 0;
+ box-shadow:0 8px 25px #0008;
+}
+h2{text-align:center;color:#e9c46a;font-size:20px}
+input{
+ width:100%;padding:14px;border-radius:10px;
+ background:#090909;border:1px solid #806126;
+ color:white;text-align:center;margin:8px 0;
+}
+.btn{
+ width:100%;padding:14px;border:0;border-radius:10px;
+ background:linear-gradient(120deg,#b78a32,#f4d887,#a77a24);
+ color:#171006;font-weight:bold;margin:6px 0;
+}
+.btn.secondary{
+ background:#191919;color:#e9c46a;
+ border:1px solid #806126;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.info{text-align:center;color:#bca36c;font-size:13px;line-height:1.8}
+.room-code{
+ font-size:34px;letter-spacing:9px;color:#f5d77e;
+ text-align:center;font-weight:bold;padding:10px;
+}
+.status{text-align:center;color:#e9c46a;margin:10px}
+.game-top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.player{
+ border:1px solid #74551f;border-radius:12px;
+ padding:10px;text-align:center;background:#15120c;
+}
+.player.active-turn{
+ border:2px solid #e9c46a;
+ box-shadow:0 0 15px #b88a3155;
+}
+.player strong{display:block;margin-bottom:5px}
+.score{font-size:24px;color:#f2d27c;font-weight:bold}
+.table-area{
+ min-height:190px;border:2px solid #735421;
+ border-radius:18px;margin:15px 0;padding:12px;
+ background:radial-gradient(ellipse,#14552f,#07321e 65%,#061d14);
+ box-shadow:inset 0 0 30px #0009;
+}
+.area-title{text-align:center;font-size:12px;color:#e5d29a;margin-bottom:10px}
+.cards{
+ display:flex;justify-content:center;align-items:center;
+ flex-wrap:wrap;gap:7px;min-height:105px;
+}
+.card{
+ width:57px;height:83px;border-radius:8px;
+ background:linear-gradient(145deg,#fff,#e6e2d8);
+ color:#171717;border:2px solid #d0c8b5;
+ display:flex;flex-direction:column;justify-content:space-between;
+ padding:5px;font-weight:bold;box-shadow:0 3px 7px #0008;
+ user-select:none;touch-action:manipulation;
+ -webkit-tap-highlight-color:transparent;
+}
+button.card{
+ appearance:none;-webkit-appearance:none;
+ margin:0;font-family:Arial,sans-serif;
+}
+.card.red{color:#c21f2c}
+.card .center{font-size:23px;text-align:center;align-self:center}
+.card .corner{font-size:13px;line-height:1}
+.card .bottom{transform:rotate(180deg);align-self:flex-end}
+.card.selected{
+ transform:translateY(-9px);
+ border:3px solid #e8bd55;
+ box-shadow:0 0 12px #f5ce66;
+}
+.card:focus{outline:none}
+.hand-area{
+ border:1px solid #6c5124;border-radius:15px;
+ background:#111;padding:12px;margin-top:12px;
+}
+.hand-title{text-align:center;font-size:13px;color:#e9c46a;margin-bottom:10px}
+.hand{display:flex;justify-content:center;gap:5px;flex-wrap:wrap}
+.hand .card{width:61px;height:89px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.actions .btn{margin:0}
+.small{font-size:11px;color:#b9a16a;text-align:center;margin-top:8px}
+#message{
+ text-align:center;min-height:25px;color:#f3d783;
+ font-size:13px;margin:8px 0;
+}
+.result{text-align:center;font-size:18px;line-height:2}
+.hidden{display:none!important}
+.history{
+ font-size:13px;color:#d9c38f;line-height:2;
+ max-height:120px;overflow:auto;
+}
+@media(max-width:380px){
+ .card{width:49px;height:74px}
+ .hand .card{width:52px;height:80px}
+ .card .center{font-size:20px}
+}
+</style>
+</head>
+
+<body>
+<header>
+ <div class="logo">ROYAL <span class="gold">BASRA</span></div>
+ <div class="sub">البصرة المصرية • تحدي الأذكياء</div>
+</header>
+
+<section id="home" class="screen active">
+ <div class="panel">
+  <h2>ابدأ اللعب</h2>
+  <div class="info">حدد الفورة أولًا، ثم أنشئ غرفة وادع صديقك.</div>
+  <input id="targetInput" type="number" min="10" value="100" placeholder="الفورة بالنقاط">
+  <button class="btn" onclick="createRoom()">إنشاء غرفة جديدة</button>
+  <input id="joinCode" maxlength="4" inputmode="numeric" placeholder="أدخل كود الغرفة">
+  <button class="btn secondary" onclick="joinRoom()">دخول غرفة</button>
+  <div id="homeMessage" class="info"></div>
+ </div>
+</section>
+
+<section id="waiting" class="screen">
+ <div class="panel">
+  <h2>غرفتك جاهزة</h2>
+  <div class="info">أرسل هذا الكود إلى صديقك</div>
+  <div id="roomCode" class="room-code"></div>
+  <button class="btn secondary" onclick="copyCode()">نسخ الكود</button>
+  <div id="waitingMessage" class="status">في انتظار اللاعب الثاني...</div>
+ </div>
+</section>
+
+<section id="game" class="screen">
+ <div class="game-top">
+  <div id="hostBox" class="player">
+   <strong id="hostName">اللاعب الأول</strong>
+   <div class="score" id="hostScore">0</div>
+   <div class="small" id="hostCards">الأوراق: 0</div>
+  </div>
+  <div id="guestBox" class="player">
+   <strong id="guestName">اللاعب الثاني</strong>
+   <div class="score" id="guestScore">0</div>
+   <div class="small" id="guestCards">الأوراق: 0</div>
+  </div>
+ </div>
+
+ <div class="panel">
+  <div class="info" id="roundInfo">الجولة 1</div>
+  <div class="info" id="targetInfo">الفورة: 100 نقطة</div>
+  <div class="status" id="turnInfo"></div>
+
+  <div class="table-area">
+   <div class="area-title">الفرش — اضغط على الأوراق التي تريد جمعها</div>
+   <div id="tableCards" class="cards"></div>
+  </div>
+
+  <div id="message"></div>
+
+  <div class="hand-area">
+   <div class="hand-title">أوراقك — اختر ورقة للعب</div>
+   <div id="myHand" class="hand"></div>
+   <div class="actions">
+    <button class="btn" id="playBtn">العب الورقة</button>
+    <button class="btn secondary" id="clearBtn">إلغاء الاختيار</button>
+   </div>
+   <div class="small">اختر ورقة من يدك، ثم حدد أوراق الفرش التي تريد أخذها.</div>
+  </div>
+ </div>
+
+ <div id="roundResult" class="panel hidden">
+  <h2>نتيجة الجولة</h2>
+  <div id="resultText" class="result"></div>
+  <button id="nextRoundBtn" class="btn">بدء الجولة التالية</button>
+  <div id="nextWait" class="info"></div>
+ </div>
+
+ <div class="panel">
+  <div class="area-title">سجل المباراة</div>
+  <div id="history" class="history">بداية المباراة</div>
+ </div>
+</section>
+
+<script>
+/* ضع إعدادات Firebase نفسها من لعبة الرسم */
+const firebaseConfig = {
+ apiKey: "YOUR_API_KEY",
+ authDomain: "YOUR_PROJECT.firebaseapp.com",
+ databaseURL: "YOUR_DATABASE_URL",
+ projectId: "YOUR_PROJECT_ID",
+ storageBucket: "YOUR_PROJECT.appspot.com",
+ messagingSenderId: "YOUR_SENDER_ID",
+ appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+let roomCode="";
+let roomRef=null;
+let role="";
+let roomData=null;
+let gameData=null;
+let selectedHand=null;
+let selectedTable=[];
+let roomListener=null;
+let busy=false;
+
+const suits=["♠","♥","♦","♣"];
+const ranks=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+function showScreen(id){
+ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+}
+
+function say(text){
+ document.getElementById("message").textContent=text||"";
+}
+
+function homeSay(text){
+ document.getElementById("homeMessage").textContent=text||"";
+}
+
+function randomCode(){
+ return String(Math.floor(1000+Math.random()*9000));
+}
+
+function makeDeck(){
+ const deck=[];
+ for(const suit of suits){
+  for(const rank of ranks){
+   deck.push({id:suit+"_"+rank,suit,rank});
+  }
+ }
+ return deck;
+}
+
+function shuffle(array){
+ for(let i=array.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [array[i],array[j]]=[array[j],array[i]];
+ }
+ return array;
+}
+
+function cardValue(card){
+ if(!card)return 0;
+ if(card.rank==="A")return 1;
+ if(["J","Q","K"].includes(card.rank))return 0;
+ return Number(card.rank);
+}
+
+function isPicture(card){
+ return ["J","Q","K"].includes(card.rank);
+}
+
+function isSevenDiamond(card){
+ return card.suit==="♦" && card.rank==="7";
+}
+
+function createNewGame(previous){
+ let deck=shuffle(makeDeck());
+ const table=[];
+ const remaining=[];
+
+ for(const c of deck){
+  if(table.length<4 && c.rank!=="J" && !isSevenDiamond(c)){
+   table.push(c);
+  }else{
+   remaining.push(c);
+  }
+ }
+
+ deck=remaining;
+
+ return {
+  round:previous?previous.round+1:1,
+  target:previous?previous.target:100,
+  scoreHost:previous?previous.scoreHost:0,
+  scoreGuest:previous?previous.scoreGuest:0,
+  handHost:deck.splice(0,4),
+  handGuest:deck.splice(0,4),
+  table,
+  deck,
+  turn:"host",
+  capturedHost:0,
+  capturedGuest:0,
+  basraHost:0,
+  basraGuest:0,
+  lastCapturer:null,
+  roundOver:false,
+  matchOver:false,
+  result:"",
+  history:previous?(previous.history||[]):["بدأت المباراة"]
+ };
+}
+
+/* قواعد الجمع:
+   - الورقة المطابقة وحدها مسموحة.
+   - أو مجموعة أوراق رقمية مجموعها يساوي قيمة الورقة.
+   - الصور لا تدخل في الجمع.
+   - Q وK تأخذان الورقة المطابقة فقط.
+   - J والسبعة ♦️ لهما قواعد خاصة.
+*/
+
+function isLegalSelection(played,selected){
+ if(!selected.length)return false;
+
+ if(played.rank==="J" || isSevenDiamond(played))return true;
+
+ if(["Q","K"].includes(played.rank)){
+  return selected.length===1 && selected[0].rank===played.rank;
+ }
+
+ if(selected.length===1 && selected[0].rank===played.rank){
+  return true;
+ }
+
+ if(selected.length<2)return false;
+ if(selected.some(isPicture))return false;
+
+ const sum=selected.reduce((total,c)=>total+cardValue(c),0);
+ return sum===cardValue(played);
+}
+
+function hasSumCombination(played,table){
+ const target=cardValue(played);
+ const values=table
+  .filter(c=>!isPicture(c))
+  .map(c=>cardValue(c))
+  .filter(v=>v>0 && v<=target);
+
+ // بحث ديناميكي لمعرفة وجود مجموعة من ورقتين أو أكثر.
+ let states=new Set(["0,0"]);
+
+ for(const value of values){
+  const next=new Set(states);
+  for(const state of states){
+   const parts=state.split(",").map(Number);
+   const sum=parts[0];
+   const count=parts[1];
+   if(sum+value<=target){
+    next.add((sum+value)+","+(count+1));
+   }
+  }
+  states=next;
+ }
+
+ return states.has(target+",2") ||
+  [...states].some(s=>{
+   const p=s.split(",").map(Number);
+   return p[0]===target && p[1]>=2;
+  });
+}
+
+function hasLegalCapture(played,table){
+ if(!table.length)return false;
+
+ if(played.rank==="J" || isSevenDiamond(played))return true;
+
+ if(["Q","K"].includes(played.rank)){
+  return table.some(c=>c.rank===played.rank);
+ }
+
+ if(table.some(c=>c.rank===played.rank))return true;
+
+ return hasSumCombination(played,table);
+}
+
+function myHand(){
+ if(!gameData)return [];
+ return role==="host"?gameData.handHost:gameData.handGuest;
+}
+
+function escapeHTML(text){
+ return String(text).replace(/[&<>"']/g,ch=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[ch]));
+}
+
+function cardHTML(card,selected,location){
+ const red=(card.suit==="♥"||card.suit==="♦")?"red":"";
+ return `
+ <button type="button"
+  class="card ${red} ${selected?"selected":""}"
+  data-location="${location}"
+  data-card-id="${escapeHTML(card.id)}">
+  <span class="corner">${card.rank}${card.suit}</span>
+  <span class="center">${card.suit}</span>
+  <span class="corner bottom">${card.rank}${card.suit}</span>
+ </button>`;
+}
+
+/* أحداث الضغط مثبتة على الحاويات، فلا تضيع عند تحديث عرض الأوراق */
+document.getElementById("myHand").addEventListener("click",event=>{
+ const button=event.target.closest("button[data-location='hand']");
+ if(!button)return;
+ selectHand(button.dataset.cardId);
+});
+
+document.getElementById("tableCards").addEventListener("click",event=>{
+ const button=event.target.closest("button[data-location='table']");
+ if(!button)return;
+ toggleTable(button.dataset.cardId);
+});
+
+document.getElementById("playBtn").addEventListener("click",playSelected);
+document.getElementById("clearBtn").addEventListener("click",clearSelection);
+document.getElementById("nextRoundBtn").addEventListener("click",nextRound);
+
+async function createRoom(){
+ const target=Math.floor(Number(document.getElementById("targetInput").value));
+
+ if(!Number.isFinite(target)||target<10){
+  homeSay("حدد فورة صحيحة لا تقل عن 10 نقاط.");
+  return;
+ }
+
+ homeSay("جاري إنشاء الغرفة...");
+
+ try{
+  let created=false;
+  let code="";
+  let ref=null;
+
+  for(let i=0;i<10;i++){
+   code=randomCode();
+   ref=db.ref("basra-rooms/"+code);
+
+   const game=createNewGame(null);
+   game.target=target;
+
+   const result=await ref.transaction(current=>{
+    if(current===null){
+     return {
+      host:true,
+      guest:false,
+      status:"waiting",
+      createdAt:Date.now(),
+      game
+     };
+    }
+    return;
+   });
+
+   if(result.committed){
+    created=true;
+    break;
+   }
+  }
+
+  if(!created){
+   homeSay("تعذر إيجاد كود متاح. حاول مرة أخرى.");
+   return;
+  }
+
+  roomCode=code;
+  roomRef=ref;
+  role="host";
+
+  document.getElementById("roomCode").textContent=code;
+  document.getElementById("waitingMessage").textContent="في انتظار اللاعب الثاني...";
+  showScreen("waiting");
+  attachRoom();
+
+ }catch(error){
+  homeSay("خطأ في الاتصال: "+error.message);
+ }
+}
+
+async function joinRoom(){
+ const code=document.getElementById("joinCode").value.trim();
+
+ if(!/^\d{4}$/.test(code)){
+  homeSay("اكتب كودًا صحيحًا من 4 أرقام.");
+  return;
+ }
+
+ homeSay("جاري البحث عن الغرفة...");
+
+ try{
+  const ref=db.ref("basra-rooms/"+code);
+
+  const result=await ref.transaction(current=>{
+   if(!current || current.status!=="waiting" || current.guest===true){
+    return;
+   }
+   current.guest=true;
+   current.status="playing";
+   current.startTime=Date.now();
+   return current;
+  });
+
+  if(!result.committed){
+   homeSay("الغرفة غير موجودة أو ممتلئة أو بدأت بالفعل.");
+   return;
+  }
+
+  roomCode=code;
+  roomRef=ref;
+  role="guest";
+  attachRoom();
+
+ }catch(error){
+  homeSay("تعذر الدخول: "+error.message);
+ }
+}
+
+function copyCode(){
+ const code=document.getElementById("roomCode").textContent;
+ if(navigator.clipboard){
+  navigator.clipboard.writeText(code)
+   .then(()=>document.getElementById("waitingMessage").textContent="تم نسخ الكود.")
+   .catch(()=>document.getElementById("waitingMessage").textContent="تعذر النسخ، انسخ الكود يدويًا.");
+ }
+}
+
+function attachRoom(){
+ if(roomListener && roomRef){
+  roomRef.off("value",roomListener);
+ }
+
+ roomListener=roomRef.on("value",snap=>{
+  roomData=snap.val();
+  if(!roomData)return;
+
+  gameData=roomData.game;
+
+  if(roomData.status==="waiting"){
+   showScreen("waiting");
+   return;
+  }
+
+  showScreen("game");
+  renderGame();
+ });
+}
+
+function selectHand(id){
+ if(!gameData || gameData.roundOver || gameData.turn!==role || busy)return;
+
+ selectedHand=selectedHand===id?null:id;
+ selectedTable=[];
+ renderGame();
+
+ if(selectedHand){
+  const card=myHand().find(c=>c.id===selectedHand);
+  if(card && (card.rank==="J" || isSevenDiamond(card))){
+   say(card.rank==="J"?"الولد سيأخذ كل أوراق الفرش.":"السبعة ♦️ ستأخذ كل أوراق الفرش.");
+  }else{
+   say("اختر الأوراق التي تريد أخذها من الفرش.");
+  }
+ }else{
+  say("تم إلغاء اختيار الورقة.");
+ }
+}
+
+function toggleTable(id){
+ if(!gameData || gameData.roundOver || gameData.turn!==role || busy)return;
+
+ if(!selectedHand){
+  say("اختر ورقة من يدك أولًا.");
+  return;
+ }
+
+ const played=myHand().find(c=>c.id===selectedHand);
+ if(!played)return;
+
+ if(played.rank==="J" || isSevenDiamond(played)){
+  say("هذه الورقة تأخذ الفرش كله تلقائيًا.");
+  return;
+ }
+
+ const exists=selectedTable.includes(id);
+ selectedTable=exists?
+  selectedTable.filter(x=>x!==id):
+  [...selectedTable,id];
+
+ const chosen=(gameData.table||[]).filter(c=>selectedTable.includes(c.id));
+
+ if(chosen.length && !isLegalSelection(played,chosen)){
+  say("الاختيار غير صحيح. اختر ورقة مساوية أو مجموعة مجموعها يساوي ورقتك.");
+ }else if(chosen.length){
+  say("اختيار صحيح. اضغط العب الورقة.");
+ }else{
+  say("لم تختر أي ورقة من الفرش.");
+ }
+
+ renderGame();
+}
+
+function clearSelection(){
+ selectedHand=null;
+ selectedTable=[];
+ renderGame();
+ say("تم إلغاء الاختيار.");
+}
+
+function renderGame(){
+ if(!gameData)return;
+
+ const g=gameData;
+
+ document.getElementById("hostScore").textContent=g.scoreHost;
+ document.getElementById("guestScore").textContent=g.scoreGuest;
+ document.getElementById("hostCards").textContent="الأوراق: "+g.capturedHost;
+ document.getElementById("guestCards").textContent="الأوراق: "+g.capturedGuest;
+ document.getElementById("roundInfo").textContent="الجولة "+g.round;
+ document.getElementById("targetInfo").textContent="الفورة: "+g.target+" نقطة";
+
+ document.getElementById("hostBox").classList.toggle("active-turn",g.turn==="host"&&!g.roundOver);
+ document.getElementById("guestBox").classList.toggle("active-turn",g.turn==="guest"&&!g.roundOver);
+
+ document.getElementById("turnInfo").textContent=
+  g.roundOver?"انتهت الجولة":
+  g.turn===role?"دورك الآن":"انتظر دور اللاعب الآخر";
+
+ document.getElementById("tableCards").innerHTML=
+  (g.table||[]).map(c=>
+   cardHTML(c,selectedTable.includes(c.id),"table")
+  ).join("");
+
+ document.getElementById("myHand").innerHTML=
+  myHand().map(c=>
+   cardHTML(c,selectedHand===c.id,"hand")
+  ).join("");
+
+ document.getElementById("playBtn").disabled=
+  g.roundOver || g.turn!==role || !selectedHand || busy;
+
+ document.getElementById("history").innerHTML=
+  (g.history||[]).slice(-15).reverse()
+  .map(x=>"<div>• "+escapeHTML(x)+"</div>").join("");
+
+ if(g.roundOver){
+  document.getElementById("roundResult").classList.remove("hidden");
+  document.getElementById("resultText").innerHTML=g.result||"انتهت الجولة";
+
+  document.getElementById("nextRoundBtn").classList.toggle("hidden",g.matchOver||role!=="host");
+  document.getElementById("nextWait").textContent=
+   g.matchOver?"انتهت المباراة!":
+   role==="guest"?"في انتظار المضيف لبدء الجولة التالية.":"";
+ }else{
+  document.getElementById("roundResult").classList.add("hidden");
+ }
+}
+
+function finishRound(g){
+ // الأوراق المتبقية تذهب لآخر لاعب قام باللم.
+ if(g.table.length && g.lastCapturer){
+  const key=g.lastCapturer==="host"?"capturedHost":"capturedGuest";
+  g[key]=(g[key]||0)+g.table.length;
+  g.table=[];
+ }
+
+ let pointsH=g.basraHost||0;
+ let pointsG=g.basraGuest||0;
+
+ if(g.capturedHost>g.capturedGuest){
+  pointsH+=20;
+ }else if(g.capturedGuest>g.capturedHost){
+  pointsG+=20;
+ }else{
+  pointsH+=10;
+  pointsG+=10;
+ }
+
+ g.scoreHost+=pointsH;
+ g.scoreGuest+=pointsG;
+ g.roundOver=true;
+
+ const target=g.target||100;
+ const h=g.scoreHost;
+ const p=g.scoreGuest;
+
+ if(h>=target && p>=target){
+  g.matchOver=true;
+
+  if(h>p){
+   g.result="الفائز بالمباراة: اللاعب الأول 🏆";
+  }else if(p>h){
+   g.result="الفائز بالمباراة: اللاعب الثاني 🏆";
+  }else{
+   g.result="تعادل في المباراة! 🏆";
+  }
+ }else if(h>=target){
+  g.matchOver=true;
+  g.result="الفائز بالمباراة: اللاعب الأول 🏆";
+ }else if(p>=target){
+  g.matchOver=true;
+  g.result="الفائز بالمباراة: اللاعب الثاني 🏆";
+ }else{
+  g.result=
+   "نقاط اللاعب الأول في الجولة: "+pointsH+
+   "<br>نقاط اللاعب الثاني في الجولة: "+pointsG+
+   "<br>إجمالي اللاعب الأول: "+h+
+   "<br>إجمالي اللاعب الثاني: "+p;
+ }
+
+ g.history=g.history||[];
+ g.history.push("انتهت الجولة — الأول: "+pointsH+" نقطة، الثاني: "+pointsG+" نقطة");
+}
+
+async function playSelected(){
+ if(busy)return;
+
+ if(!gameData || !selectedHand){
+  say("اختر ورقة من يدك أولًا.");
+  return;
+ }
+
+ if(gameData.roundOver || gameData.turn!==role){
+  say("ليس دورك الآن.");
+  return;
+ }
+
+ const played=myHand().find(c=>c.id===selectedHand);
+ if(!played){
+  say("الورقة المختارة لم تعد موجودة.");
+  return;
+ }
+
+ const liveTable=gameData.table||[];
+ const chosen=liveTable.filter(c=>selectedTable.includes(c.id));
+
+ const special=played.rank==="J" || isSevenDiamond(played);
+
+ if(!special){
+  if(selectedTable.length){
+   if(chosen.length!==selectedTable.length){
+    say("تغير الفرش. اختر الأوراق مرة أخرى.");
+    return;
+   }
+
+   if(!isLegalSelection(played,chosen)){
+    say("الجمع غير صحيح. الصور لا تدخل في الجمع الحسابي.");
+    return;
+   }
+  }else if(hasLegalCapture(played,liveTable)){
+   say("لديك ورقة أو مجموعة تستطيع أخذها. اخترها أولًا.");
+   return;
+  }
+ }
+
+ busy=true;
+ document.getElementById("playBtn").disabled=true;
+ say("جاري تنفيذ الحركة...");
+
+ const handId=selectedHand;
+ const tableIds=selectedTable.slice();
+
+ try{
+  const result=await roomRef.child("game").transaction(g=>{
+   if(!g || g.roundOver || g.turn!==role)return;
+
+   const myKey=role==="host"?"handHost":"handGuest";
+   const myCaptured=role==="host"?"capturedHost":"capturedGuest";
+   const myBasra=role==="host"?"basraHost":"basraGuest";
+
+   if(!Array.isArray(g[myKey]))return;
+
+   const index=g[myKey].findIndex(c=>c.id===handId);
+   if(index<0)return;
+
+   const playedCard=g[myKey][index];
+   const table=g.table||[];
+   let captured=[];
+
+   if(playedCard.rank==="J" || isSevenDiamond(playedCard)){
+    captured=table.slice();
+   }else{
+    captured=table.filter(c=>tableIds.includes(c.id));
+
+    if(tableIds.length){
+     if(captured.length!==tableIds.length)return;
+     if(!isLegalSelection(playedCard,captured))return;
+    }else{
+     if(hasLegalCapture(playedCard,table))return;
+    }
+   }
+
+   g[myKey].splice(index,1);
+
+   if(captured.length){
+    const capturedIds=captured.map(c=>c.id);
+    g.table=table.filter(c=>!capturedIds.includes(c.id));
+
+    g[myCaptured]=(g[myCaptured]||0)+captured.length;
+
+    let basra=0;
+
+    // بصرة الولد: ولد واحد في الفرش، ويؤخذ بولد آخر.
+    if(
+     playedCard.rank==="J" &&
+     table.length===1 &&
+     table[0].rank==="J"
+    ){
+     basra=20;
+    }
+    // بصرة السبعة ♦️: مجموع الفرش 10 أو أقل، دون صور.
+    else if(isSevenDiamond(playedCard)){
+     const noPictures=table.every(c=>!isPicture(c));
+     const total=table.reduce((sum,c)=>sum+cardValue(c),0);
+
+     if(noPictures && total<=10){
+      basra=10;
+     }
+    }
+    // البصرة العادية.
+    else if(
+     playedCard.rank!=="J" &&
+     !isSevenDiamond(playedCard) &&
+     table.length>0 &&
+     captured.length===table.length
+    ){
+     basra=10;
+    }
+
+    if(basra){
+     g[myBasra]=(g[myBasra]||0)+basra;
+     g.history=g.history||[];
+     g.history.push(
+      (role==="host"?"اللاعب الأول":"اللاعب الثاني")+
+      " حقق بصرة بـ "+basra+" نقطة"
+     );
+    }
+
+    g.lastCapturer=role;
+   }else{
+    g.table.push(playedCard);
+   }
+
+   g.turn=role==="host"?"guest":"host";
+   g.history=g.history||[];
+
+   g.history.push(
+    (role==="host"?"اللاعب الأول":"اللاعب الثاني")+
+    " لعب "+playedCard.rank+playedCard.suit
+   );
+
+   // توزيع أربع أوراق لكل لاعب بعد انتهاء أيدي اللاعبين.
+   if(g.handHost.length===0 && g.handGuest.length===0){
+    if(g.deck.length>=8){
+     g.handHost=g.deck.splice(0,4);
+     g.handGuest=g.deck.splice(0,4);
+     g.history.push("تم توزيع أربع أوراق جديدة لكل لاعب");
+    }else{
+     finishRound(g);
+    }
+   }
+
+   return g;
+  });
+
+  if(!result.committed){
+   say("لم تنفذ الحركة. قد تكون حالة اللعبة تغيرت، حاول مرة أخرى.");
+  }else{
+   selectedHand=null;
+   selectedTable=[];
+   say("تم تنفيذ الحركة.");
+  }
+
+ }catch(error){
+  say("خطأ في تنفيذ الحركة: "+error.message);
+ }finally{
+  busy=false;
+  renderGame();
+ }
+}
+
+async function nextRound(){
+ if(role!=="host" || !gameData || !gameData.roundOver || gameData.matchOver)return;
+
+ const next=createNewGame(gameData);
+
+ try{
+  const result=await roomRef.child("game").transaction(g=>{
+   if(!g || !g.roundOver || g.matchOver)return;
+   return next;
+  });
+
+  if(!result.committed){
+   say("تعذر بدء الجولة الجديدة.");
+   return;
+  }
+
+  selectedHand=null;
+  selectedTable=[];
+  say("بدأت الجولة الجديدة.");
+ }catch(error){
+  say("خطأ: "+error.message);
+ }
+}
+</script>
+</body>
+</html>
